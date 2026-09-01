@@ -30,7 +30,7 @@ jobs:
         run: npm test -- --watchAll=false
 
       - name: Check dependencies for vulnerabilities
-        run: npm audit --audit-level=high
+        run: npm audit
 
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v3
