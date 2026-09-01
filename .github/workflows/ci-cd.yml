@@ -3,11 +3,7 @@ name: Frontend CI/CD
 on:
   push:
     branches:
-<<<<<<< HEAD
-      - main
-=======
-      -  master 
->>>>>>> d1f13bc3fff849d08916655cb1fa78c45982719d
+      - master
 
 env:
   REGION: us-east4
