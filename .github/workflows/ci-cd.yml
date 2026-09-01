@@ -9,9 +9,6 @@ env:
   REGION: us-east4
   REPOSITORY: conduit
   SERVICE: conduit-frontend
-  PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
-  WIF_PROVIDER: ${{ secrets.WIF_PROVIDER }}
-  SERVICE_ACCOUNT: github-actions@${{ secrets.GCP_PROJECT_ID }}.iam.gserviceaccount.com
 
 jobs:
   build-test-scan-deploy:
@@ -35,9 +32,8 @@ jobs:
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v3
         with:
-          project_id: ${{ env.PROJECT_ID }}
-          workload_identity_provider: ${{ env.WIF_PROVIDER }}
-          service_account: ${{ env.SERVICE_ACCOUNT }}
+          workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
 
       - name: Set up Google Cloud CLI
         uses: google-github-actions/setup-gcloud@v2
@@ -49,7 +45,7 @@ jobs:
       - name: Build and push Docker image
         run: |
           VERSION=v1.0.${GITHUB_RUN_NUMBER}
-          IMAGE=${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/frontend:${VERSION}
+          IMAGE=${{ env.REGION }}-docker.pkg.dev/${{ secrets.PROJECT_ID }}/${{ env.REPOSITORY }}/frontend:${VERSION}
 
           docker build -t "$IMAGE" .
           docker push "$IMAGE"
