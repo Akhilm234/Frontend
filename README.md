@@ -1,74 +1,149 @@
-# ![React + Redux Example App](project-logo.png)
+# Conduit Frontend
 
-[![RealWorld Frontend](https://img.shields.io/badge/realworld-frontend-%23783578.svg)](http://realworld.io)
+React and Redux frontend for the Conduit RealWorld blogging application. It supports registration, login, articles, comments, favorites, tags, profiles, and following users.
 
-> ### React + Redux codebase containing real world examples (CRUD, auth, advanced patterns, etc) that adheres to the [RealWorld](https://github.com/gothinkster/realworld-example-apps) spec and API.
+## Architecture
 
-<a href="https://stackblitz.com/edit/react-redux-realworld" target="_blank"><img width="187" src="https://github.com/gothinkster/realworld/blob/master/media/edit_on_blitz.png?raw=true" /></a>&nbsp;&nbsp;<a href="https://thinkster.io/tutorials/build-a-real-world-react-redux-application" target="_blank"><img width="384" src="https://raw.githubusercontent.com/gothinkster/realworld/master/media/learn-btn-hr.png" /></a>
+```text
+Browser -> React frontend on Cloud Run -> Express backend on Cloud Run -> Neon PostgreSQL
+```
 
-### [Demo](https://react-redux.realworld.io)&nbsp;&nbsp;&nbsp;&nbsp;[RealWorld](https://github.com/gothinkster/realworld)
+The frontend never connects directly to Neon. It sends requests to the backend using `REACT_APP_API_ROOT`.
 
-Originally created for this [GH issue](https://github.com/reactjs/redux/issues/1353). The codebase is now feature complete; please submit bug fixes via pull requests & feedback via issues.
+## Prerequisites
 
-We also have notes in [**our wiki**](https://github.com/gothinkster/react-redux-realworld-example-app/wiki) about how the various patterns used in this codebase and how they work (thanks [@thejmazz](https://github.com/thejmazz)!)
+- Node.js 10 and npm for this older React toolchain
+- Git
+- Docker for deployment
+- A running backend API
 
+## Run locally
 
-## Getting started
+```bash
+npm install
+```
 
-You can view a live demo over at https://react-redux.realworld.io/
+PowerShell:
 
-To get the frontend running locally:
+```powershell
+$env:REACT_APP_API_ROOT="http://localhost:3000/api"
+npm start
+```
 
-- Clone this repo
-- `npm install` to install all req'd dependencies
-- `npm start` to start the local server (this project uses create-react-app)
+Linux or macOS:
 
-Local web server will use port 4100 instead of standard React's port 3000 to prevent conflicts with some backends like Node or Rails. You can configure port in scripts section of `package.json`: we use [cross-env](https://github.com/kentcdodds/cross-env) to set environment variable PORT for React scripts, this is Windows-compatible way of setting environment variables.
- 
-Alternatively, you can add `.env` file in the root folder of project to set environment variables (use PORT to change webserver's port). This file will be ignored by git, so it is suitable for API keys and other sensitive stuff. Refer to [dotenv](https://github.com/motdotla/dotenv) and [React](https://github.com/facebookincubator/create-react-app/blob/master/packages/react-scripts/template/README.md#adding-development-environment-variables-in-env) documentation for more details. Also, please remove setting variable via script section of `package.json` - `dotenv` never override variables if they are already set.  
+```bash
+export REACT_APP_API_ROOT=http://localhost:3000/api
+npm start
+```
 
-### Making requests to the backend API
+The frontend runs on `http://localhost:4100`. The backend must run separately on `http://localhost:3000`.
 
-For convenience, we have a live API server running at https://conduit.productionready.io/api for the application to make requests against. You can view [the API spec here](https://github.com/GoThinkster/productionready/blob/master/api) which contains all routes & responses for the server.
+## Functionality
 
-The source code for the backend server (available for Node, Rails and Django) can be found in the [main RealWorld repo](https://github.com/gothinkster/realworld).
+- User registration, login, and logout
+- JWT-based authentication
+- Create, read, update, and delete articles
+- Add and delete comments
+- Favorite and unfavorite articles
+- Follow and unfollow users
+- Filter articles by author or tag
+- Paginated article lists
 
-If you want to change the API URL to a local server, simply edit `src/agent.js` and change `API_ROOT` to the local server's URL (i.e. `http://localhost:3000/api`)
+## Tests
 
+```bash
+npm test -- --watchAll=false
+```
 
-## Functionality overview
+## Docker
 
-The example application is a social blogging site (i.e. a Medium.com clone) called "Conduit". It uses a custom API for all requests, including authentication. You can view a live demo over at https://redux.productionready.io/
+Build the image. Use the deployed backend URL instead of localhost when deploying:
 
-**General functionality:**
+```bash
+docker build \
+  --build-arg REACT_APP_API_ROOT=http://localhost:3000/api \
+  -t conduit-frontend:local .
+```
 
-- Authenticate users via JWT (login/signup pages + logout button on settings page)
-- CRU* users (sign up & settings page - no deleting required)
-- CRUD Articles
-- CR*D Comments on articles (no updating required)
-- GET and display paginated lists of articles
-- Favorite articles
-- Follow other users
+Run it:
 
-**The general page breakdown looks like this:**
+```bash
+docker run --name conduit-frontend -p 4100:4100 conduit-frontend:local
+```
 
-- Home page (URL: /#/ )
-    - List of tags
-    - List of articles pulled from either Feed, Global, or by Tag
-    - Pagination for list of articles
-- Sign in/Sign up pages (URL: /#/login, /#/register )
-    - Use JWT (store the token in localStorage)
-- Settings page (URL: /#/settings )
-- Editor page to create/edit articles (URL: /#/editor, /#/editor/article-slug-here )
-- Article page (URL: /#/article/article-slug-here )
-    - Delete article button (only shown to article's author)
-    - Render markdown from server client side
-    - Comments section at bottom of page
-    - Delete comment button (only shown to comment's author)
-- Profile page (URL: /#/@username, /#/@username/favorites )
-    - Show basic user info
-    - List of articles populated from author's created articles or author's favorited articles
+## Cloud Run deployment
 
-<br />
+The backend URL is included during the Docker build because React embeds environment values into its generated files.
 
-[![Brought to you by Thinkster](https://raw.githubusercontent.com/gothinkster/realworld/master/media/end.png)](https://thinkster.io)
+```bash
+export PROJECT_ID=$(gcloud config get-value project)
+export REGION=us-east4
+export BACKEND_URL=https://your-backend-cloud-run-url
+export IMAGE=$REGION-docker.pkg.dev/$PROJECT_ID/conduit/frontend:v1.0.0
+
+docker build \
+  --build-arg REACT_APP_API_ROOT=$BACKEND_URL/api \
+  -t conduit-frontend:local .
+
+docker tag conduit-frontend:local $IMAGE
+docker push $IMAGE
+
+gcloud run deploy conduit-frontend \
+  --image $IMAGE \
+  --region $REGION \
+  --port 4100 \
+  --no-allow-unauthenticated
+```
+
+## CI/CD
+
+The workflow is `.github/workflows/ci-cd.yml`. On every push to `main`, GitHub Actions checks out the code, installs dependencies, runs tests, runs `npm audit`, builds and pushes a Docker image, and deploys it to Cloud Run.
+
+Required GitHub secrets:
+
+```text
+GCP_PROJECT_ID
+GCP_SA_KEY
+BACKEND_URL
+```
+
+## Versioning
+
+Images use `v1.0.<GitHub run number>`, for example `frontend:v1.0.12`, so every deployment can be traced to a CI/CD run.
+
+## Security
+
+- The frontend contains no database credentials.
+- `.env` files and service-account JSON keys are excluded from Git.
+- `npm audit --audit-level=high` checks frontend dependencies during CI/CD.
+- A production setup should use Workload Identity Federation instead of long-lived service-account keys.
+
+## Monitoring and observability
+
+Cloud Run automatically captures frontend request and container logs. View them at:
+
+```text
+Google Cloud Console -> Cloud Run -> conduit-frontend -> Logs
+```
+
+Request count, latency, CPU, memory, instances, and errors are available at:
+
+```text
+Google Cloud Console -> Cloud Run -> conduit-frontend -> Metrics
+```
+
+## Challenges and solutions
+
+- The frontend originally called an external API, so the API client was changed to use a configurable backend URL.
+- The old Create React App toolchain requires Node.js 10 locally.
+- The backend URL must be available before building the frontend image.
+- Qwiklabs restricted public Cloud Run IAM changes, so the service was deployed privately for testing.
+
+## Screenshots to add
+
+- Successful frontend CI/CD run
+- Running frontend application
+- Frontend Cloud Run service
+- Frontend Cloud Run logs and metrics
+- Security scan result
