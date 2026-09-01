@@ -9,13 +9,16 @@ env:
   REGION: us-east4
   REPOSITORY: conduit
   SERVICE: conduit-frontend
+  PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  WIF_PROVIDER: ${{ secrets.WIF_PROVIDER }}
+  SERVICE_ACCOUNT: github-actions@${{ secrets.GCP_PROJECT_ID }}.iam.gserviceaccount.com
 
 jobs:
   build-test-scan-deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout codes
+      - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Set up Node.js
@@ -40,14 +43,18 @@ jobs:
         uses: google-github-actions/setup-gcloud@v2
 
       - name: Configure Docker authentication
-        run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
+        run: |
+          gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
 
       - name: Build and push Docker image
         run: |
           VERSION=v1.0.${GITHUB_RUN_NUMBER}
-          IMAGE=${{ env.REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ env.REPOSITORY }}/backend:${VERSION}
+          IMAGE=${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/frontend:${VERSION}
+
           docker build -t "$IMAGE" .
           docker push "$IMAGE"
+
+          echo "IMAGE=$IMAGE" >> "$GITHUB_ENV"
 
       - name: Deploy to Cloud Run
         run: |
