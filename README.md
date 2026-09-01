@@ -140,10 +140,8 @@ Google Cloud Console -> Cloud Run -> conduit-frontend -> Metrics
 - The backend URL must be available before building the frontend image.
 - Qwiklabs restricted public Cloud Run IAM changes, so the service was deployed privately for testing.
 
-## Screenshots to add
+## Deployment and logs
 
-- Successful frontend CI/CD run
-- Running frontend application
-- Frontend Cloud Run service
-- Frontend Cloud Run logs and metrics
-- Security scan result
+The frontend was deployed successfully to Google Cloud Run. The screenshot below shows the deployed service, its region and URL, and the Cloud Run startup logs.
+
+![Frontend Cloud Run deployment and logs](docs/screenshots/frontend-deployment-logs.png)
